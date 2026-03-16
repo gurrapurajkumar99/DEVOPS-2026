@@ -1,0 +1,815 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--sidebar-w:220px;--header-h:56px;--c-bg:#f8f9fb;--c-surface:#fff;--c-border:#e4e7ec;--c-primary:#4f46e5;--c-primary-light:#eef2ff;--c-text:#111827;--c-muted:#6b7280;--c-danger:#dc2626;--c-warn:#d97706;--c-success:#16a34a;--c-info:#0369a1}
+body{font-family:system-ui,sans-serif;background:var(--c-bg);color:var(--c-text);font-size:14px;min-height:100vh}
+/* layout */
+#app{display:flex;min-height:100vh}
+#sidebar{width:var(--sidebar-w);background:var(--c-surface);border-right:1px solid var(--c-border);display:flex;flex-direction:column;flex-shrink:0;transition:.2s}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#topbar{height:var(--header-h);background:var(--c-surface);border-bottom:1px solid var(--c-border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+#content{flex:1;padding:24px;overflow-y:auto}
+/* sidebar */
+.sb-logo{padding:16px 18px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--c-border)}
+.sb-logo-icon{width:32px;height:32px;background:var(--c-primary);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.sb-logo-icon svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2}
+.sb-logo-text{font-weight:500;font-size:15px}
+.sb-logo-badge{font-size:10px;color:var(--c-muted);letter-spacing:.5px;margin-top:1px}
+.sb-nav{padding:12px 10px;flex:1}
+.nav-section{font-size:11px;color:var(--c-muted);padding:8px 8px 4px;letter-spacing:.6px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--c-muted);transition:.15s;margin-bottom:2px;font-size:13.5px}
+.nav-item:hover{background:var(--c-bg);color:var(--c-text)}
+.nav-item.active{background:var(--c-primary-light);color:var(--c-primary);font-weight:500}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:#fee2e2;color:#991b1b;font-size:11px;padding:1px 7px;border-radius:10px;font-weight:500}
+.sb-user{padding:12px 14px;border-top:1px solid var(--c-border);display:flex;align-items:center;gap:10px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;font-size:12px;flex-shrink:0}
+/* topbar */
+.tb-title{font-weight:500;font-size:15px;flex:1}
+.tb-search{display:flex;align-items:center;gap:8px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:8px;padding:0 10px;height:34px;min-width:200px}
+.tb-search input{border:none;background:transparent;outline:none;font-size:13px;color:var(--c-text);width:100%}
+.tb-search input::placeholder{color:var(--c-muted)}
+.tb-btn{height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--c-border);background:var(--c-surface);cursor:pointer;font-size:13px;color:var(--c-text);display:flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.tb-btn:hover{background:var(--c-bg)}
+.tb-btn.primary{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.tb-btn.primary:hover{background:#4338ca}
+.tb-btn.danger{background:#fef2f2;color:var(--c-danger);border-color:#fecaca}
+/* pages */
+.page{display:none}
+.page.active{display:block}
+/* cards */
+.card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:12px;padding:20px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--c-bg);border-radius:10px;padding:16px}
+.metric-label{font-size:12px;color:var(--c-muted);margin-bottom:6px}
+.metric-val{font-size:24px;font-weight:500}
+.metric-sub{font-size:12px;color:var(--c-muted);margin-top:4px}
+.metric-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+/* charts row */
+.chart-row{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:20px}
+/* table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--c-border);color:var(--c-muted);font-weight:500;font-size:12px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--c-border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--c-bg)}
+.badge{display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:500}
+.b-critical{background:#fee2e2;color:#991b1b}
+.b-high{background:#fef3c7;color:#92400e}
+.b-medium{background:#e0f2fe;color:#075985}
+.b-low{background:#dcfce7;color:#166534}
+.b-open{background:#ede9fe;color:#5b21b6}
+.b-in-progress{background:#fef3c7;color:#92400e}
+.b-resolved{background:#dcfce7;color:#166534}
+.b-closed{background:#f3f4f6;color:#374151}
+/* form */
+.form-grid{display:grid;gap:16px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:12px;font-weight:500;color:var(--c-muted)}
+.form-group input,.form-group textarea,.form-group select{border:1px solid var(--c-border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--c-text);background:var(--c-surface);outline:none;transition:.15s;font-family:inherit}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.form-group textarea{resize:vertical;min-height:90px}
+.ai-preview{background:var(--c-primary-light);border:1px solid #c7d2fe;border-radius:10px;padding:14px;margin-top:4px}
+/* login */
+#login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--c-bg)}
+.login-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:16px;padding:36px 32px;width:380px;max-width:92vw}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;justify-content:center}
+.login-logo-icon{width:40px;height:40px;background:var(--c-primary);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.login-logo-icon svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2}
+/* admin */
+.role-chip{display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:500}
+.r-admin{background:#ede9fe;color:#5b21b6}
+.r-developer{background:#dbeafe;color:#1e40af}
+.r-tester{background:#dcfce7;color:#166534}
+/* ai pill */
+.ai-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#5b21b6;font-weight:500}
+.pulse{width:7px;height:7px;border-radius:50%;background:#a855f7;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* toasts */
+#toast{position:fixed;top:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast-msg{background:#111;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;animation:slideIn .25s ease}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* progress */
+.progress-bar{background:var(--c-bg);border-radius:20px;height:6px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:20px;background:var(--c-primary)}
+</style>
+
+<div id="toast"></div>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+<div class="login-card">
+  <div class="login-logo">
+    <div class="login-logo-icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M20 12a8 8 0 11-16 0 8 8 0 0116 0z"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+    </div>
+    <div>
+      <div style="font-weight:500;font-size:16px">BugTracker AI</div>
+      <div style="font-size:12px;color:var(--c-muted)">Deep Learning Bug Management</div>
+    </div>
+  </div>
+  <div style="margin-bottom:20px;text-align:center">
+    <div style="font-size:20px;font-weight:500;margin-bottom:4px">Welcome back</div>
+    <div style="font-size:13px;color:var(--c-muted)">Sign in to your account</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="form-group">
+      <label>Email address</label>
+      <input type="email" id="login-email" placeholder="admin@company.com" value="admin@company.com"/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" value="password"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <select id="login-role" style="flex:1;border:1px solid var(--c-border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--c-text);background:var(--c-surface)">
+        <option value="admin">Admin</option>
+        <option value="developer">Developer</option>
+        <option value="tester">Tester</option>
+      </select>
+    </div>
+    <button class="tb-btn primary" onclick="doLogin()" style="width:100%;justify-content:center;height:40px;font-size:14px">Sign in</button>
+  </div>
+  <div style="margin-top:18px;text-align:center;font-size:12px;color:var(--c-muted)">
+    Demo: use any email/password above
+  </div>
+</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M20 12a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>
+      </div>
+      <div>
+        <div class="sb-logo-text">BugTracker AI</div>
+        <div class="sb-logo-badge">AI-POWERED</div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="nav('bugs',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h8M8 12h8M8 18h5"/><circle cx="18" cy="18" r="3"/><path d="m21 21-1.5-1.5"/></svg>
+        All Bugs
+        <span class="nav-badge" id="open-count-nav">12</span>
+      </div>
+      <div class="nav-item" onclick="nav('new-bug',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+        Report Bug
+      </div>
+      <div class="nav-section">Manage</div>
+      <div class="nav-item" onclick="nav('projects',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 7a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7z"/><path d="M16 2v4M8 2v4"/></svg>
+        Projects
+      </div>
+      <div class="nav-item" onclick="nav('admin',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Admin Panel
+      </div>
+      <div class="nav-section">Analytics</div>
+      <div class="nav-item" onclick="nav('analytics',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+        Analytics
+      </div>
+    </div>
+    <div class="sb-user" onclick="doLogout()">
+      <div class="avatar" id="sb-avatar" style="background:#ede9fe;color:#5b21b6">A</div>
+      <div style="flex:1;min-width:0">
+        <div id="sb-name" style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Admin User</div>
+        <div id="sb-role" style="font-size:11px;color:var(--c-muted)">admin</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="topbar">
+      <div class="tb-title" id="page-title">Dashboard</div>
+      <div class="tb-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search bugs..." id="global-search" oninput="handleSearch(this.value)"/>
+      </div>
+      <button class="tb-btn" onclick="nav('new-bug',null)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+        New Bug
+      </button>
+      <button class="tb-btn danger" onclick="doLogout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Logout
+      </button>
+    </div>
+
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-label">Total Bugs</div>
+            <div class="metric-val" id="m-total">47</div>
+            <div class="metric-sub"><span class="metric-dot" style="background:#6366f1"></span>All projects</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Open</div>
+            <div class="metric-val" style="color:var(--c-danger)" id="m-open">12</div>
+            <div class="metric-sub"><span class="metric-dot" style="background:#dc2626"></span>Needs attention</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">In Progress</div>
+            <div class="metric-val" style="color:var(--c-warn)" id="m-progress">18</div>
+            <div class="metric-sub"><span class="metric-dot" style="background:#d97706"></span>Being worked on</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Resolved</div>
+            <div class="metric-val" style="color:var(--c-success)" id="m-resolved">17</div>
+            <div class="metric-sub"><span class="metric-dot" style="background:#16a34a"></span>This month</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="card">
+            <div style="font-size:14px;font-weight:500;margin-bottom:4px">Bug trends (last 7 days)</div>
+            <div style="font-size:12px;color:var(--c-muted);margin-bottom:14px">New vs resolved</div>
+            <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:var(--c-muted)">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#4f46e5"></span>New bugs</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a"></span>Resolved</span>
+            </div>
+            <div style="position:relative;height:200px"><canvas id="trendChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div style="font-size:14px;font-weight:500;margin-bottom:4px">Severity distribution</div>
+            <div style="font-size:12px;color:var(--c-muted);margin-bottom:14px">AI-predicted severity breakdown</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--c-muted)">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#dc2626"></span>Critical 19%</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#d97706"></span>High 34%</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#4f46e5"></span>Medium 30%</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a"></span>Low 17%</span>
+            </div>
+            <div style="position:relative;height:180px"><canvas id="sevChart"></canvas></div>
+          </div>
+        </div>
+        <!-- Developer workload -->
+        <div class="card" style="margin-bottom:20px">
+          <div style="font-size:14px;font-weight:500;margin-bottom:16px">Developer workload</div>
+          <div id="workload-list"></div>
+        </div>
+        <!-- Recent bugs table -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:14px;font-weight:500">Recent bugs</div>
+            <button class="tb-btn" style="font-size:12px" onclick="nav('bugs',null)">View all</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Title</th><th>Severity</th><th>Status</th><th>Assignee</th><th>AI confidence</th></tr></thead>
+              <tbody id="recent-bugs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUGS LIST -->
+      <div id="page-bugs" class="page">
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <select id="filter-status" onchange="renderBugs()" style="border:1px solid var(--c-border);border-radius:8px;padding:7px 12px;font-size:13px;background:var(--c-surface)">
+            <option value="">All status</option>
+            <option value="open">Open</option>
+            <option value="in-progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+          </select>
+          <select id="filter-sev" onchange="renderBugs()" style="border:1px solid var(--c-border);border-radius:8px;padding:7px 12px;font-size:13px;background:var(--c-surface)">
+            <option value="">All severity</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select id="filter-proj" onchange="renderBugs()" style="border:1px solid var(--c-border);border-radius:8px;padding:7px 12px;font-size:13px;background:var(--c-surface)">
+            <option value="">All projects</option>
+            <option value="Authentication">Authentication</option>
+            <option value="Payments">Payments</option>
+            <option value="Dashboard">Dashboard</option>
+            <option value="API">API</option>
+          </select>
+          <div style="margin-left:auto;font-size:13px;color:var(--c-muted);align-self:center" id="bugs-count-label"></div>
+        </div>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Title</th><th>Project</th><th>Severity</th><th>Status</th><th>Assignee</th><th>Reported</th><th>Actions</th></tr></thead>
+              <tbody id="bugs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW BUG -->
+      <div id="page-new-bug" class="page">
+        <div style="max-width:680px">
+          <div class="card">
+            <div style="font-size:16px;font-weight:500;margin-bottom:4px">Report a new bug</div>
+            <div style="font-size:13px;color:var(--c-muted);margin-bottom:20px">AI will predict severity from your description in real time</div>
+            <div class="form-grid">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Project *</label>
+                  <select id="f-project">
+                    <option value="">Select project</option>
+                    <option>Authentication</option>
+                    <option>Payments</option>
+                    <option>Dashboard</option>
+                    <option>API</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Component *</label>
+                  <select id="f-component">
+                    <option value="">Select component</option>
+                    <option>Login / Auth</option>
+                    <option>Database</option>
+                    <option>UI / Frontend</option>
+                    <option>API / Backend</option>
+                    <option>Payment Gateway</option>
+                    <option>Security</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Bug title *</label>
+                <input type="text" id="f-title" placeholder="e.g. Login crashes on Safari mobile" oninput="liveAI()"/>
+              </div>
+              <div class="form-group">
+                <label>Description * <span style="font-size:11px;color:var(--c-muted)">(AI reads this for severity prediction)</span></label>
+                <textarea id="f-desc" placeholder="Describe the bug in detail — what happened, what you expected, steps to reproduce..." oninput="liveAI()"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Environment</label>
+                  <select id="f-env">
+                    <option value="production">Production</option>
+                    <option value="staging">Staging</option>
+                    <option value="development">Development</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Assign to</label>
+                  <select id="f-assignee">
+                    <option value="">Auto-assign</option>
+                    <option value="Arjun Sharma">Arjun Sharma</option>
+                    <option value="Priya Venkat">Priya Venkat</option>
+                    <option value="Karan Das">Karan Das</option>
+                    <option value="Meena Raj">Meena Raj</option>
+                  </select>
+                </div>
+              </div>
+              <!-- LIVE AI PREVIEW -->
+              <div class="ai-preview" id="ai-preview" style="display:none">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                  <div class="ai-pill"><div class="pulse"></div>AI Prediction</div>
+                  <span style="font-size:12px;color:var(--c-muted)">Deep Learning (LTR + LR)</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                  <div style="text-align:center">
+                    <div style="font-size:11px;color:var(--c-muted);margin-bottom:4px">Severity</div>
+                    <div id="ai-sev" style="font-size:18px;font-weight:500"></div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:11px;color:var(--c-muted);margin-bottom:4px">Confidence</div>
+                    <div id="ai-conf" style="font-size:18px;font-weight:500;color:#5b21b6"></div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:11px;color:var(--c-muted);margin-bottom:4px">Priority rank</div>
+                    <div id="ai-rank" style="font-size:18px;font-weight:500;color:#0369a1"></div>
+                  </div>
+                  <div style="text-align:center">
+                    <div style="font-size:11px;color:var(--c-muted);margin-bottom:4px">Assignee type</div>
+                    <div id="ai-assign" style="font-size:15px;font-weight:500;color:#166534"></div>
+                  </div>
+                </div>
+                <div style="margin-top:12px">
+                  <div style="font-size:11px;color:var(--c-muted);margin-bottom:6px">Score distribution</div>
+                  <div id="ai-bars"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:4px">
+                <button class="tb-btn primary" onclick="submitBug()" style="flex:1;justify-content:center;height:40px">Submit bug report</button>
+                <button class="tb-btn" onclick="clearForm()" style="height:40px">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECTS -->
+      <div id="page-projects" class="page">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px" id="projects-grid"></div>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="page-admin" class="page">
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-size:14px;font-weight:500;margin-bottom:14px">User management</div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Bugs assigned</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="admin-users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:14px;font-weight:500;margin-bottom:14px">Add new user</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+            <div class="form-group"><label>Name</label><input type="text" id="new-user-name" placeholder="Full name"/></div>
+            <div class="form-group"><label>Email</label><input type="email" id="new-user-email" placeholder="email@company.com"/></div>
+            <div class="form-group"><label>Role</label>
+              <select id="new-user-role">
+                <option value="tester">Tester</option>
+                <option value="developer">Developer</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button class="tb-btn primary" onclick="addUser()" style="height:36px">Add user</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div id="page-analytics" class="page">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px">
+          <div class="metric-card"><div class="metric-label">AI accuracy</div><div class="metric-val" style="color:#5b21b6">81%</div><div class="metric-sub">vs 75% baseline (paper)</div></div>
+          <div class="metric-card"><div class="metric-label">Avg resolution time</div><div class="metric-val">2.4d</div><div class="metric-sub">Critical bugs</div></div>
+          <div class="metric-card"><div class="metric-label">Predictions made</div><div class="metric-val" id="pred-count">47</div><div class="metric-sub">Total this session</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div style="font-size:14px;font-weight:500;margin-bottom:4px">Bugs by project</div>
+            <div style="font-size:12px;color:var(--c-muted);margin-bottom:10px">Distribution across projects</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--c-muted)">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#4f46e5"></span>Auth</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#0369a1"></span>Payments</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a"></span>Dashboard</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#d97706"></span>API</span>
+            </div>
+            <div style="position:relative;height:220px"><canvas id="projChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div style="font-size:14px;font-weight:500;margin-bottom:4px">Resolution rate (30 days)</div>
+            <div style="font-size:12px;color:var(--c-muted);margin-bottom:10px">Bugs opened vs closed</div>
+            <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:var(--c-muted)">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#dc2626"></span>Opened</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a"></span>Closed</span>
+            </div>
+            <div style="position:relative;height:220px"><canvas id="resChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+var currentUser = null;
+var aiTimer = null;
+var chartsInit = false;
+var analyticsInit = false;
+
+var bugs = [
+  {id:'BUG-001',title:'Login crashes on Safari mobile',project:'Authentication',sev:'critical',status:'open',assignee:'Arjun Sharma',reported:'2024-01-15',conf:0.91,rank:98},
+  {id:'BUG-002',title:'Payment fails silently for Visa cards',project:'Payments',sev:'critical',status:'in-progress',assignee:'Priya Venkat',reported:'2024-01-14',conf:0.88,rank:95},
+  {id:'BUG-003',title:'Dashboard charts not loading on Firefox',project:'Dashboard',sev:'high',status:'open',assignee:'Karan Das',reported:'2024-01-14',conf:0.79,rank:74},
+  {id:'BUG-004',title:'API rate limit not applied correctly',project:'API',sev:'high',status:'in-progress',assignee:'Arjun Sharma',reported:'2024-01-13',conf:0.82,rank:72},
+  {id:'BUG-005',title:'Password reset email not sent',project:'Authentication',sev:'high',status:'resolved',assignee:'Meena Raj',reported:'2024-01-12',conf:0.76,rank:70},
+  {id:'BUG-006',title:'Session expires too quickly',project:'Authentication',sev:'medium',status:'open',assignee:'Karan Das',reported:'2024-01-11',conf:0.73,rank:48},
+  {id:'BUG-007',title:'Currency formatting wrong for INR',project:'Payments',sev:'medium',status:'resolved',assignee:'Priya Venkat',reported:'2024-01-10',conf:0.68,rank:45},
+  {id:'BUG-008',title:'Filter dropdown resets on page reload',project:'Dashboard',sev:'low',status:'resolved',assignee:'Meena Raj',reported:'2024-01-09',conf:0.61,rank:18},
+  {id:'BUG-009',title:'Tooltip text truncated on mobile',project:'Dashboard',sev:'low',status:'closed',assignee:'Karan Das',reported:'2024-01-08',conf:0.59,rank:12},
+  {id:'BUG-010',title:'GraphQL query timeout after 30s',project:'API',sev:'high',status:'in-progress',assignee:'Arjun Sharma',reported:'2024-01-07',conf:0.84,rank:71},
+  {id:'BUG-011',title:'2FA code not working for Google Auth',project:'Authentication',sev:'critical',status:'open',assignee:'Priya Venkat',reported:'2024-01-06',conf:0.93,rank:99},
+  {id:'BUG-012',title:'Refund API returns 500 on retry',project:'Payments',sev:'high',status:'open',assignee:'Arjun Sharma',reported:'2024-01-05',conf:0.81,rank:73},
+];
+
+var users = [
+  {name:'Admin User',email:'admin@company.com',role:'admin',bugs:0,active:true},
+  {name:'Arjun Sharma',email:'arjun@company.com',role:'developer',bugs:4,active:true},
+  {name:'Priya Venkat',email:'priya@company.com',role:'developer',bugs:3,active:true},
+  {name:'Karan Das',email:'karan@company.com',role:'developer',bugs:3,active:true},
+  {name:'Meena Raj',email:'meena@company.com',role:'tester',bugs:2,active:true},
+  {name:'Raj Kumar',email:'raj@company.com',role:'tester',bugs:0,active:false},
+];
+
+var projects = [
+  {name:'Authentication',key:'AUTH',open:4,total:8,crit:2,desc:'User login, signup, OAuth, 2FA, session management'},
+  {name:'Payments',key:'PAY',open:3,total:6,crit:1,desc:'Stripe/Razorpay integration, refunds, invoicing'},
+  {name:'Dashboard',key:'DASH',open:2,total:5,crit:0,desc:'Analytics UI, charts, filters, export features'},
+  {name:'API',key:'API',open:3,total:5,crit:0,desc:'REST & GraphQL endpoints, rate limiting, auth middleware'},
+];
+
+function doLogin() {
+  var email = document.getElementById('login-email').value.trim();
+  var pass = document.getElementById('login-password').value.trim();
+  var role = document.getElementById('login-role').value;
+  if(!email || !pass){ toast('Please enter email and password'); return; }
+  currentUser = {name: role==='admin'?'Admin User':role==='developer'?'Arjun Sharma':'Meena Raj', email, role};
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('sb-name').textContent = currentUser.name;
+  document.getElementById('sb-role').textContent = currentUser.role;
+  var av = document.getElementById('sb-avatar');
+  av.textContent = currentUser.name.charAt(0);
+  var cols = {admin:'#ede9fe;color:#5b21b6',developer:'#dbeafe;color:#1e40af',tester:'#dcfce7;color:#166534'};
+  av.style.cssText += ';background:'+cols[role].split(';')[0]+';'+cols[role].split(';')[1];
+  toast('Welcome back, '+currentUser.name+'!');
+  setTimeout(()=>{ initCharts(); renderDashboard(); },50);
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  chartsInit = false; analyticsInit = false;
+  toast('Signed out successfully');
+}
+
+function nav(page, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  var titles = {dashboard:'Dashboard','bugs':'All Bugs','new-bug':'Report Bug',projects:'Projects',admin:'Admin Panel',analytics:'Analytics'};
+  document.getElementById('page-title').textContent = titles[page]||page;
+  if(page==='bugs') renderBugs();
+  if(page==='projects') renderProjects();
+  if(page==='admin') renderAdmin();
+  if(page==='analytics' && !analyticsInit){ initAnalytics(); analyticsInit=true; }
+}
+
+function sevBadge(s){ return '<span class="badge b-'+s+'">'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>'; }
+function statusBadge(s){ return '<span class="badge b-'+s.replace(' ','-')+'">'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>'; }
+
+function renderDashboard(){
+  var open=bugs.filter(b=>b.status==='open').length;
+  var ip=bugs.filter(b=>b.status==='in-progress').length;
+  var res=bugs.filter(b=>b.status==='resolved'||b.status==='closed').length;
+  document.getElementById('m-total').textContent=bugs.length;
+  document.getElementById('m-open').textContent=open;
+  document.getElementById('m-progress').textContent=ip;
+  document.getElementById('m-resolved').textContent=res;
+  document.getElementById('open-count-nav').textContent=open;
+  renderWorkload();
+  var tbody=document.getElementById('recent-bugs-tbody');
+  tbody.innerHTML=bugs.slice(0,6).map(b=>`<tr>
+    <td style="font-size:12px;color:var(--c-muted);font-weight:500">${b.id}</td>
+    <td style="max-width:200px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.title}</div></td>
+    <td>${sevBadge(b.sev)}</td>
+    <td>${statusBadge(b.status)}</td>
+    <td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:24px;height:24px;font-size:10px;background:#e0e7ff;color:#3730a3">${b.assignee.charAt(0)}</div>${b.assignee.split(' ')[0]}</div></td>
+    <td><div style="display:flex;align-items:center;gap:6px"><div class="pulse" style="flex-shrink:0"></div>${Math.round(b.conf*100)}%</div></td>
+  </tr>`).join('');
+}
+
+function renderWorkload(){
+  var devs=['Arjun Sharma','Priya Venkat','Karan Das','Meena Raj'];
+  var colors=['#4f46e5','#0369a1','#16a34a','#d97706'];
+  var html=devs.map((d,i)=>{
+    var total=bugs.filter(b=>b.assignee===d).length;
+    var open=bugs.filter(b=>b.assignee===d&&b.status==='open').length;
+    var pct=Math.round((total/bugs.length)*100);
+    return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+      <div class="avatar" style="width:28px;height:28px;font-size:11px;background:#f3f4f6;color:${colors[i]}">${d.charAt(0)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span style="font-weight:500">${d}</span>
+          <span style="color:var(--c-muted)">${total} bugs · ${open} open</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${colors[i]}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('workload-list').innerHTML=html;
+}
+
+function renderBugs(){
+  var fs=document.getElementById('filter-status').value;
+  var fv=document.getElementById('filter-sev').value;
+  var fp=document.getElementById('filter-proj').value;
+  var q=(document.getElementById('global-search').value||'').toLowerCase();
+  var list=bugs.filter(b=>{
+    if(fs && b.status!==fs) return false;
+    if(fv && b.sev!==fv) return false;
+    if(fp && b.project!==fp) return false;
+    if(q && !b.title.toLowerCase().includes(q) && !b.id.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById('bugs-count-label').textContent=list.length+' bug'+(list.length===1?'':'s');
+  document.getElementById('bugs-tbody').innerHTML=list.map(b=>`<tr>
+    <td style="font-size:12px;color:var(--c-muted);font-weight:500">${b.id}</td>
+    <td style="max-width:180px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${b.title}">${b.title}</div></td>
+    <td><span style="font-size:12px;color:var(--c-muted)">${b.project}</span></td>
+    <td>${sevBadge(b.sev)}</td>
+    <td>${statusBadge(b.status)}</td>
+    <td>${b.assignee.split(' ')[0]}</td>
+    <td style="font-size:12px;color:var(--c-muted)">${b.reported}</td>
+    <td><div style="display:flex;gap:6px">
+      <button class="tb-btn" style="padding:3px 10px;font-size:11px;height:28px" onclick="cycleSev('${b.id}')">Sev</button>
+      <button class="tb-btn" style="padding:3px 10px;font-size:11px;height:28px" onclick="cycleStatus('${b.id}')">Status</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function cycleSev(id){
+  var b=bugs.find(x=>x.id===id); if(!b) return;
+  var sevs=['low','medium','high','critical'];
+  b.sev=sevs[(sevs.indexOf(b.sev)+1)%4];
+  renderBugs(); toast('Severity updated to '+b.sev);
+}
+function cycleStatus(id){
+  var b=bugs.find(x=>x.id===id); if(!b) return;
+  var stats=['open','in-progress','resolved','closed'];
+  b.status=stats[(stats.indexOf(b.status)+1)%4];
+  renderBugs(); renderDashboard(); toast('Status updated to '+b.status);
+}
+
+function renderProjects(){
+  document.getElementById('projects-grid').innerHTML=projects.map(p=>{
+    var pct=Math.round(((p.total-p.open)/p.total)*100);
+    return `<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-weight:500;font-size:15px">${p.name}</div>
+          <div style="font-size:12px;color:var(--c-muted);margin-top:2px">${p.desc}</div>
+        </div>
+        <span style="background:#f3f4f6;color:#374151;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:500">${p.key}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+        <div style="text-align:center"><div style="font-size:11px;color:var(--c-muted)">Total</div><div style="font-size:20px;font-weight:500">${p.total}</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--c-muted)">Open</div><div style="font-size:20px;font-weight:500;color:#dc2626">${p.open}</div></div>
+        <div style="text-align:center"><div style="font-size:11px;color:var(--c-muted)">Critical</div><div style="font-size:20px;font-weight:500;color:#d97706">${p.crit}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--c-muted);margin-bottom:4px">Resolution progress — ${pct}%</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdmin(){
+  document.getElementById('admin-users-tbody').innerHTML=users.map((u,i)=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:8px">
+      <div class="avatar" style="width:28px;height:28px;font-size:11px;background:#e0e7ff;color:#3730a3">${u.name.charAt(0)}</div>
+      <span style="font-weight:500;font-size:13px">${u.name}</span>
+    </div></td>
+    <td style="font-size:12px;color:var(--c-muted)">${u.email}</td>
+    <td><span class="role-chip r-${u.role}">${u.role}</span></td>
+    <td style="text-align:center">${u.bugs}</td>
+    <td><span class="badge" style="background:${u.active?'#dcfce7':'#f3f4f6'};color:${u.active?'#166534':'#374151'}">${u.active?'Active':'Inactive'}</span></td>
+    <td><button class="tb-btn" style="font-size:11px;height:26px;padding:0 10px" onclick="toggleUser(${i})">${u.active?'Deactivate':'Activate'}</button></td>
+  </tr>`).join('');
+}
+
+function toggleUser(i){ users[i].active=!users[i].active; renderAdmin(); toast('User status updated'); }
+
+function addUser(){
+  var name=document.getElementById('new-user-name').value.trim();
+  var email=document.getElementById('new-user-email').value.trim();
+  var role=document.getElementById('new-user-role').value;
+  if(!name||!email){ toast('Enter name and email'); return; }
+  users.push({name,email,role,bugs:0,active:true});
+  document.getElementById('new-user-name').value='';
+  document.getElementById('new-user-email').value='';
+  renderAdmin(); toast('User added: '+name);
+}
+
+function liveAI(){
+  var title=document.getElementById('f-title').value;
+  var desc=document.getElementById('f-desc').value;
+  var preview=document.getElementById('ai-preview');
+  if(title.length<3 && desc.length<10){ preview.style.display='none'; return; }
+  clearTimeout(aiTimer);
+  aiTimer=setTimeout(()=>{ runAI(title+' '+desc); },350);
+}
+
+function runAI(text){
+  var t=text.toLowerCase();
+  var sev,conf,rank,atype;
+  var crit=['crash','data loss','security breach','corrupt','unauthorized','null pointer','out of memory','deadlock','injection'];
+  var high=['fail','error','exception','broken','not working','timeout','500','unauthorized','crash'];
+  var med=['slow','performance','latency','warning','incorrect','missing','wrong'];
+
+  if(crit.some(w=>t.includes(w))){ sev='critical';conf=0.85+Math.random()*.1;rank=95+Math.floor(Math.random()*5);atype='Lead Dev'; }
+  else if(high.some(w=>t.includes(w))){ sev='high';conf=0.72+Math.random()*.15;rank=65+Math.floor(Math.random()*15);atype='Senior Dev'; }
+  else if(med.some(w=>t.includes(w))){ sev='medium';conf=0.60+Math.random()*.18;rank=38+Math.floor(Math.random()*20);atype='Developer'; }
+  else{ sev='low';conf=0.50+Math.random()*.2;rank=10+Math.floor(Math.random()*20);atype='Junior Dev'; }
+
+  conf=Math.min(0.97,conf);
+  var colMap={critical:'#dc2626',high:'#d97706',medium:'#4f46e5',low:'#16a34a'};
+  document.getElementById('ai-sev').innerHTML='<span class="badge b-'+sev+'">'+sev.charAt(0).toUpperCase()+sev.slice(1)+'</span>';
+  document.getElementById('ai-conf').textContent=Math.round(conf*100)+'%';
+  document.getElementById('ai-rank').textContent='#'+rank;
+  document.getElementById('ai-assign').textContent=atype;
+
+  var scores={critical:0,high:0,medium:0,low:0};
+  if(sev==='critical'){ scores.critical=conf;scores.high=(1-conf)*0.6;scores.medium=(1-conf)*0.3;scores.low=(1-conf)*0.1; }
+  else if(sev==='high'){ scores.high=conf;scores.critical=(1-conf)*0.3;scores.medium=(1-conf)*0.5;scores.low=(1-conf)*0.2; }
+  else if(sev==='medium'){ scores.medium=conf;scores.high=(1-conf)*0.4;scores.low=(1-conf)*0.4;scores.critical=(1-conf)*0.2; }
+  else{ scores.low=conf;scores.medium=(1-conf)*0.5;scores.high=(1-conf)*0.3;scores.critical=(1-conf)*0.2; }
+
+  var barsHtml='';
+  [['critical','#dc2626'],['high','#d97706'],['medium','#4f46e5'],['low','#16a34a']].forEach(([s,c])=>{
+    var pct=Math.round(scores[s]*100);
+    barsHtml+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px">
+      <span style="width:52px;color:var(--c-muted)">${s}</span>
+      <div style="flex:1;background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${c};border-radius:4px;transition:width .4s"></div></div>
+      <span style="width:30px;text-align:right;font-weight:500">${pct}%</span>
+    </div>`;
+  });
+  document.getElementById('ai-bars').innerHTML=barsHtml;
+  document.getElementById('ai-preview').style.display='block';
+}
+
+function submitBug(){
+  var proj=document.getElementById('f-project').value;
+  var title=document.getElementById('f-title').value.trim();
+  var desc=document.getElementById('f-desc').value.trim();
+  if(!proj||!title||!desc){ toast('Fill in project, title and description'); return; }
+  var sevEl=document.getElementById('ai-sev');
+  var sev=sevEl&&sevEl.querySelector('.badge')?sevEl.querySelector('.badge').textContent.toLowerCase():'medium';
+  var conf=parseFloat((document.getElementById('ai-conf').textContent||'70').replace('%',''))/100;
+  var newId='BUG-'+String(bugs.length+1).padStart(3,'0');
+  var assignee=document.getElementById('f-assignee').value||'Arjun Sharma';
+  bugs.unshift({id:newId,title,project:proj,sev,status:'open',assignee,reported:new Date().toISOString().slice(0,10),conf,rank:Math.floor(conf*100)});
+  document.getElementById('pred-count').textContent=bugs.length;
+  toast('Bug '+newId+' submitted — AI severity: '+sev.toUpperCase()+'!');
+  clearForm();
+  nav('bugs',null);
+}
+
+function clearForm(){
+  ['f-project','f-component','f-title','f-desc','f-env','f-assignee'].forEach(id=>{
+    var el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('ai-preview').style.display='none';
+}
+
+function handleSearch(q){
+  if(document.getElementById('page-bugs').classList.contains('active')) renderBugs();
+}
+
+function initCharts(){
+  if(chartsInit) return;
+  chartsInit=true;
+  var days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{labels:days,datasets:[
+      {label:'New',data:[5,8,3,7,6,4,9],borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.08)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#4f46e5'},
+      {label:'Resolved',data:[3,5,6,4,8,5,7],borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.08)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#16a34a'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+  new Chart(document.getElementById('sevChart'),{
+    type:'doughnut',
+    data:{labels:['Critical','High','Medium','Low'],datasets:[{data:[9,16,14,8],backgroundColor:['#dc2626','#d97706','#4f46e5','#16a34a'],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}
+  });
+}
+
+function initAnalytics(){
+  new Chart(document.getElementById('projChart'),{
+    type:'bar',
+    data:{labels:['Authentication','Payments','Dashboard','API'],datasets:[
+      {label:'Open',data:[4,3,2,3],backgroundColor:'#4f46e5'},
+      {label:'Resolved',data:[4,3,3,2],backgroundColor:'#e0e7ff'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}},y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11}}}}}
+  });
+  var months=['Jan','Feb','Mar','Apr','May','Jun'];
+  new Chart(document.getElementById('resChart'),{
+    type:'line',
+    data:{labels:months,datasets:[
+      {label:'Opened',data:[22,28,19,35,24,18],borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.07)',fill:true,tension:.4,pointRadius:4},
+      {label:'Closed',data:[15,22,24,28,30,22],borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.07)',fill:true,tension:.4,pointRadius:4},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+}
+
+function toast(msg){
+  var t=document.getElementById('toast');
+  var el=document.createElement('div');
+  el.className='toast-msg'; el.textContent=msg;
+  t.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+</script>
